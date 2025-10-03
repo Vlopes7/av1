@@ -1,15 +1,111 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Sistema = void 0;
-var Etapa_1 = require("./Etapa");
+var fs = __importStar(require("fs"));
+var path = __importStar(require("path"));
+var Aeronaves_1 = require("./Aeronaves");
+var Endere_o_1 = require("./Endere\u00E7o");
 var enum_1 = require("./enum");
+var Funcionario_1 = require("./Funcionario");
+var Pecas_1 = require("./Pecas");
+var Telefone_1 = require("./Telefone");
+var Etapa_1 = require("./Etapa");
+var DADOS_PATH = path.join(__dirname, "database.json");
 var Sistema = /** @class */ (function () {
     function Sistema() {
         this.aeronaves = [];
         this.peças = [];
         this.funcionarios = [];
         this.etapas = [];
+        this.carregarDados();
     }
+    Sistema.prototype.salvarDados = function () {
+        try {
+            var dados = {
+                aeronaves: this.aeronaves,
+                peças: this.peças,
+                funcionarios: this.funcionarios,
+                etapas: this.etapas.map(function (e) { return ({
+                    nome: e.nome,
+                    data: e.data,
+                    status: e.status,
+                    funcionarios: e.funcionario.map(function (f) { return f.cpf; }),
+                    aeronave: e.aeronave,
+                }); }),
+            };
+            fs.writeFileSync(DADOS_PATH, JSON.stringify(dados, null, 2), "utf-8");
+        }
+        catch (error) {
+            console.error("Erro ao salvar os dados:", error);
+        }
+    };
+    Sistema.prototype.carregarDados = function () {
+        var _this = this;
+        try {
+            if (fs.existsSync(DADOS_PATH)) {
+                var dadosJSON = fs.readFileSync(DADOS_PATH, "utf-8");
+                if (!dadosJSON)
+                    return;
+                var dados = JSON.parse(dadosJSON);
+                this.aeronaves = dados.aeronaves.map(function (a) {
+                    return new Aeronaves_1.Aeronave(a.codigo, a.modelo, a.tipo, a.capacidade, a.autonomia);
+                });
+                this.peças = dados.peças.map(function (p) { return new Pecas_1.Peças(p.nome, p.tipo, p.fornecedor, p.status, p.aeronave); });
+                this.funcionarios = dados.funcionarios.map(function (f) {
+                    return new Funcionario_1.Funcionario(f.nome, new Telefone_1.Telefone(f.telefone.ddd, f.telefone.numero), new Endere_o_1.Endereco(f.endereco.rua, f.endereco.numero, f.endereco.bairro, f.endereco.cidade), f.cpf, f.hierarquia, f.login, f.senha);
+                });
+                this.etapas = dados.etapas.map(function (e) {
+                    var funcsDaEtapa = e.funcionarios
+                        .map(function (cpfFunc) {
+                        return _this.funcionarios.find(function (funcInstanciado) { return funcInstanciado.cpf === cpfFunc; });
+                    })
+                        .filter(function (f) { return f; });
+                    var etapa = new Etapa_1.Etapa(e.nome, new Date(e.data), e.status, funcsDaEtapa, e.aeronave);
+                    return etapa;
+                });
+            }
+        }
+        catch (error) {
+            console.error("Erro ao carregar os dados:", error);
+            this.aeronaves = [];
+            this.peças = [];
+            this.funcionarios = [];
+            this.etapas = [];
+        }
+    };
     Sistema.prototype.cadastrarAeronave = function (aeronave) {
         if (this.aeronaves.find(function (a) { return a.codigo === aeronave.codigo; })) {
             throw new Error("Código de aeronave já existente");

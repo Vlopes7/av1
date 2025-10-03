@@ -1,0 +1,69 @@
+{
+  "aeronaves": [
+    {
+      "testes": {},
+      "codigo": 1010,
+      "modelo": "737",
+      "tipo": "Comercial",
+      "capacidade": 200,
+      "alcance": 20000
+    }
+  ],
+  "peças": [
+    {
+      "nome": "aquela pe�a la",
+      "tipo": "Importada",
+      "fornecedor": "",
+      "status": "Em produção",
+      "aeronave": 1010
+    }
+  ],
+  "funcionarios": [
+    {
+      "nome": "vinicius",
+      "telefone": {
+        "ddd": "12",
+        "numero": "98845334"
+      },
+      "endereco": {
+        "rua": "aquela",
+        "numero": 333,
+        "bairro": "vista verde",
+        "cidade": "sao z� dos campos"
+      },
+      "cpf": "2134455663211",
+      "cargo": "Administrador",
+      "user": "vlopes7",
+      "senha": "12345"
+    },
+    {
+      "nome": "pedro",
+      "telefone": {
+        "ddd": "12",
+        "numero": "43423553535"
+      },
+      "endereco": {
+        "rua": "aquela outra",
+        "numero": 344,
+        "bairro": "sei la",
+        "cidade": "s�o z� dos campso"
+      },
+      "cpf": "242353235",
+      "cargo": "Engenheiro",
+      "user": "pedrao a lenda",
+      "senha": "1324235"
+    }
+  ],
+  "etapas": [
+    {
+      "nome": "pintura",
+      "data": "2025-10-12T00:00:00.000Z",
+      "status": "Pendente",
+      "funcionarios": [
+        "242353235",
+        "2134455663211"
+      ],
+      "aeronave": 1010
+    }
+  ]
+}

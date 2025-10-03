@@ -1,16 +1,110 @@
+import * as fs from "fs";
+import * as path from "path";
 import { Aeronave } from "./Aeronaves";
-import { result, statusPeca } from "./enum";
+import { Endereco } from "./Endereço";
+import { statusPeca, producao } from "./enum";
 import { Funcionario } from "./Funcionario";
 import { Peças } from "./Pecas";
+import { Telefone } from "./Telefone";
 import { Etapa } from "./Etapa";
-import { producao } from "./enum";
-import { testes } from "./enum";
+
+const DADOS_PATH = path.join(__dirname, "database.json");
 
 export class Sistema {
-  aeronaves: Aeronave[] = [];
-  peças: Peças[] = [];
-  funcionarios: Funcionario[] = [];
-  etapas: Etapa[] = [];
+  aeronaves: Aeronave[];
+  peças: Peças[];
+  funcionarios: Funcionario[];
+  etapas: Etapa[];
+
+  constructor() {
+    this.aeronaves = [];
+    this.peças = [];
+    this.funcionarios = [];
+    this.etapas = [];
+    this.carregarDados();
+  }
+
+  salvarDados() {
+    try {
+      const dados = {
+        aeronaves: this.aeronaves,
+        peças: this.peças,
+        funcionarios: this.funcionarios,
+        etapas: this.etapas.map((e) => ({
+          nome: e.nome,
+          data: e.data,
+          status: e.status,
+          funcionarios: e.funcionario.map((f) => f.cpf),
+          aeronave: e.aeronave,
+        })),
+      };
+      fs.writeFileSync(DADOS_PATH, JSON.stringify(dados, null, 2), "utf-8");
+    } catch (error) {
+      console.error("Erro ao salvar os dados:", error);
+    }
+  }
+
+  carregarDados() {
+    try {
+      if (fs.existsSync(DADOS_PATH)) {
+        const dadosJSON = fs.readFileSync(DADOS_PATH, "utf-8");
+        if (!dadosJSON) return;
+
+        const dados = JSON.parse(dadosJSON);
+
+        this.aeronaves = dados.aeronaves.map(
+          (a) =>
+            new Aeronave(a.codigo, a.modelo, a.tipo, a.capacidade, a.autonomia)
+        );
+        this.peças = dados.peças.map(
+          (p) => new Peças(p.nome, p.tipo, p.fornecedor, p.status, p.aeronave)
+        );
+
+        this.funcionarios = dados.funcionarios.map(
+          (f) =>
+            new Funcionario(
+              f.nome,
+              new Telefone(f.telefone.ddd, f.telefone.numero),
+              new Endereco(
+                f.endereco.rua,
+                f.endereco.numero,
+                f.endereco.bairro,
+                f.endereco.cidade
+              ),
+              f.cpf,
+              f.hierarquia,
+              f.login,
+              f.senha
+            )
+        );
+
+        this.etapas = dados.etapas.map((e) => {
+          const funcsDaEtapa = e.funcionarios
+            .map((cpfFunc) =>
+              this.funcionarios.find(
+                (funcInstanciado) => funcInstanciado.cpf === cpfFunc
+              )
+            )
+            .filter((f) => f) as Funcionario[];
+
+          const etapa = new Etapa(
+            e.nome,
+            new Date(e.data),
+            e.status,
+            funcsDaEtapa,
+            e.aeronave
+          );
+          return etapa;
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao carregar os dados:", error);
+      this.aeronaves = [];
+      this.peças = [];
+      this.funcionarios = [];
+      this.etapas = [];
+    }
+  }
 
   cadastrarAeronave(aeronave: Aeronave) {
     if (this.aeronaves.find((a) => a.codigo === aeronave.codigo)) {
@@ -186,7 +280,7 @@ export class Sistema {
 
     if (!dado) return `Aeronave com id ${id} não encontrada`;
 
-    dado.testes[teste] = result; 
+    dado.testes[teste] = result;
 
     return dado;
   }

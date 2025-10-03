@@ -1,12 +1,13 @@
-import * as readlineSync from 'readline-sync';
-import { Aeronave } from "./Aeronaves";
-import { Endereco } from "./Endereço";
-import { hierarquia, statusPeca, tipoAeronave, tipoPeca, producao, result, testes } from "./enum";
-import { Funcionario } from "./Funcionario";
-import { Peças } from "./Pecas";
-import { Sistema } from "./Sistema";
-import { Telefone } from "./Telefone";
-import { Relatorio } from "./Relatorio";
+import * as fs from 'fs'
+import * as readlineSync from 'readline-sync'
+import { Aeronave } from "./Aeronaves"
+import { Endereco } from "./Endereço"
+import { hierarquia, statusPeca, tipoAeronave, tipoPeca, producao, result, testes } from "./enum"
+import { Funcionario } from "./Funcionario"
+import { Peças } from "./Pecas"
+import { Sistema } from "./Sistema"
+import { Telefone } from "./Telefone"
+import { Relatorio } from "./Relatorio"
 
 const sistema = new Sistema()
 
@@ -25,6 +26,7 @@ function gerenciarAeronaves() {
             const novaAeronave = new Aeronave(id, modelo, tipo, capacidade, autonomia)
             sistema.cadastrarAeronave(novaAeronave)
             console.log("Aeronave cadastrada")
+            sistema.salvarDados()
             break
         case '2':
             console.log("\n--- Lista de aeronaves ---")
@@ -54,6 +56,7 @@ function gerenciarPecas() {
             const novaPeca = new Peças(nomePeca, tipo, fornecedor, statusPeca.PRODUÇÃO, idAeronave)
             sistema.cadastrarPeças(novaPeca)
             console.log("Peça cadastrada com sucesso")
+            sistema.salvarDados()
             break
         case '2':
             const nomeBusca = readlineSync.question('Digite o nome da peca: ')
@@ -65,6 +68,7 @@ function gerenciarPecas() {
             const statusIndex = readlineSync.keyInSelect(statusKeys, 'Novo Status:')
             const novoStatus = statusPeca[statusKeys[statusIndex]]
             console.log(sistema.atualizarPeça(nomeAtualizar, novoStatus))
+            sistema.salvarDados()
             break
         default:
             console.log("Opção invalida")
@@ -101,6 +105,7 @@ function gerenciarFuncionarios() {
             )
             sistema.cadastrarFuncionario(novoFunc)
             console.log("Funcionário cadastrado")
+            sistema.salvarDados()
             break
         case '2':
             console.log("\n--- Lista de funcionários ---")
@@ -123,6 +128,7 @@ function gerenciarEtapas() {
             
             sistema.criarEtapa(nomeEtapa, new Date(dataStr), producao.PENDENTE, nomesFuncionarios.map(n => n.trim()), idAeronave)
             console.log("Etapa criada com sucesso!")
+            sistema.salvarDados()
             break
         case '2':
             console.log("\n--- Lista de Etapas ---")
@@ -133,6 +139,7 @@ function gerenciarEtapas() {
             const etapaIniciar = sistema.etapas.find(e => e.nome.toLowerCase() === nomeIniciar.toLowerCase())
             if (etapaIniciar) {
                 console.log(sistema.iniciarEtapa(etapaIniciar))
+                sistema.salvarDados()
             } else {
                 console.log("Etapa não encontrada.")
             }
@@ -142,6 +149,7 @@ function gerenciarEtapas() {
             const etapaFinalizar = sistema.etapas.find(e => e.nome.toLowerCase() === nomeFinalizar.toLowerCase())
             if (etapaFinalizar) {
                 console.log(sistema.finalizarEtapa(etapaFinalizar))
+                sistema.salvarDados()
             } else {
                 console.log("Etapa não encontrada.")
             }
@@ -165,6 +173,7 @@ function realizarTeste() {
 
     sistema.fazerTeste(resultado, tipoTeste, idAeronave)
     console.log("Teste registrado")
+    sistema.salvarDados()
 }
 
 function gerarRelatorio() {
@@ -172,7 +181,19 @@ function gerarRelatorio() {
     const idAeronave = readlineSync.questionInt('ID da Aeronave para gerar relatorio: ')
     const autor = readlineSync.question('Nome do autor do relatorio: ')
     const relatorio = new Relatorio(autor, new Date(), sistema)
-    console.log(relatorio.relatorio(idAeronave))
+    const relatorioTexto = relatorio.relatorio(idAeronave)
+
+    console.log(relatorioTexto)
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    const nomeArquivo = `relatorio_aeronave_${idAeronave}_${timestamp}.txt`
+
+    try {
+        fs.writeFileSync(nomeArquivo, relatorioTexto, 'utf-8')
+        console.log(`\nRelatorio salvo com sucesso no arquivo: ${nomeArquivo}`)
+    } catch (error) {
+        console.error('\nErro ao salvar o relatorio:', error)
+    }
 }
 
 
@@ -212,6 +233,7 @@ function mainMenu() {
                 break
             case '0':
                 console.log("Saindo do sistema...")
+                sistema.salvarDados()
                 return
             default:
                 console.log("Opção inválida")
